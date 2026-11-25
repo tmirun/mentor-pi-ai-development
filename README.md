@@ -4,6 +4,12 @@
 
 从 mini-ai 通过 `ssh pro-ai.home` 登录，在 pro-ai 的 `~/projects/me/mentor-pi-ai-development` 中修改和测试。提交并推送后，再回到 mini-ai 拉取同一分支。详见 [开发约定](AGENTS.md)。
 
+## 麦克纳姆轮版 3D 模型
+
+[`models/mecanum/`](models/mecanum/) 包含底盘（`base_link.STL`）、相机（`cam_Link.STL`）、雷达（`lidar_Link.STL`）和四个车轮（`wheel_*_Link.STL`）。每个文件是一个独立零件；整车装配位置见上游的 [`mecanum.xacro`](https://github.com/Hiwonder/MentorPi-ROS/blob/fb6d9969e935eb0e31966185158e33347951e761/simulations/mentorpi_description/urdf/mecanum.xacro)。
+
+模型来源：[Hiwonder/MentorPi-ROS，版本 `fb6d9969`](https://github.com/Hiwonder/MentorPi-ROS/tree/fb6d9969e935eb0e31966185158e33347951e761/simulations/mentorpi_description/meshes/mecanum)。
+
 ## 原始资料目录
 
 产品原始资料位于 `original docs/MentorPi智能视觉小车（2025版）/`，包含以下内容：

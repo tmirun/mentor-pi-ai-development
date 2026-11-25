@@ -1,0 +1,146 @@
+<mujoco model="mentorpi_m1">
+  <!-- MentorPi M1（麦克纳姆轮底盘 + 深度相机 + 激光雷达）的仿真模型。
+       底盘、相机、雷达的外形用 Hiwonder 官方仓库里的 STL；尺寸来自官方 URDF。
+       轮子按官方网格量出的尺寸重画：每个轮子 1 个轮毂 + 9 个能自由转的小滚子。 -->
+  <compiler angle="degree" autolimits="true"
+            meshdir="models/mecanum"/>
+  <option timestep="0.01" integrator="implicitfast"/>
+  <visual>
+    <global offwidth="1280" offheight="960"/>
+    <headlight ambient="0.45 0.45 0.45" diffuse="0.6 0.6 0.6" specular="0.1 0.1 0.1"/>
+    <quality shadowsize="4096"/>
+    <map znear="0.02"/>
+  </visual>
+
+  <asset>
+    <mesh name="chassis" file="base_link.STL"/>
+    <mesh name="depth_camera" file="cam_Link.STL"/>
+    <mesh name="lidar" file="lidar_Link.STL"/>
+    <texture name="floor" type="2d" builtin="checker" rgb1="0.86 0.85 0.80" rgb2="0.78 0.77 0.72" width="512" height="512"/>
+    <material name="floor" texture="floor" texrepeat="6 6" reflectance="0.05"/>
+    <material name="metal" rgba="0.16 0.16 0.17 1" specular="0.6" shininess="0.6"/>
+    <material name="silver" rgba="0.72 0.73 0.75 1" specular="0.6" shininess="0.7"/>
+    <material name="hub" rgba="0.92 0.92 0.90 1"/>
+    <material name="rubber" rgba="0.10 0.10 0.10 1"/>
+    <material name="wall" rgba="0.55 0.60 0.66 1"/>
+    <material name="tall_box" rgba="0.85 0.47 0.34 1"/>
+    <material name="low_box" rgba="0.93 0.76 0.35 1"/>
+  </asset>
+
+  <default>
+    <geom contype="0" conaffinity="0"/>
+    <default class="look">   <!-- 只负责好看，不参与碰撞 -->
+      <geom group="2"/>
+    </default>
+    <default class="wheel">
+      <joint axis="0 1 0" damping="0.0002" armature="0.00002"/>
+      <geom group="2" type="cylinder" size="0.0195 0.013" euler="90 0 0" material="hub" mass="0.03"/>
+    </default>
+    <default class="roller">  <!-- 小滚子：只和地面碰撞 -->
+      <joint damping="0.000002" armature="0.0000015"/>
+      <geom type="ellipsoid" size="0.00659 0.00659 0.0205" conaffinity="1" condim="3"
+            friction="0.9" material="rubber" mass="0.002" group="1"/>
+    </default>
+    <default class="obstacle">  <!-- 墙和箱子：只和车身的防撞框碰撞 -->
+      <geom type="box" contype="2" group="1" friction="0.3"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <light pos="0 0 3" dir="0 0 -1" diffuse="0.5 0.5 0.5" castshadow="true"/>
+    <geom name="floor" type="plane" size="0 0 0.05" material="floor" contype="1" group="1" friction="0.05"/>
+
+    <!-- 3 米 × 3 米的房间 -->
+    <geom name="wall_east"  class="obstacle" pos=" 1.55 0 0.15" size="0.05 1.6 0.15" material="wall"/>
+    <geom name="wall_west"  class="obstacle" pos="-1.55 0 0.15" size="0.05 1.6 0.15" material="wall"/>
+    <geom name="wall_north" class="obstacle" pos="0  1.55 0.15" size="1.6 0.05 0.15" material="wall"/>
+    <geom name="wall_south" class="obstacle" pos="0 -1.55 0.15" size="1.6 0.05 0.15" material="wall"/>
+
+    <!-- 6 个高箱子、4 个矮箱子：平时放在房间外面，要用的时候用 data.mocap_pos 搬进来 -->
+    <replicate count="6" offset="0.5 0 0">
+      <body name="tall_box" mocap="true" pos="6 6 0.15">
+        <geom class="obstacle" size="0.11 0.11 0.15" material="tall_box"/>
+      </body>
+    </replicate>
+    <replicate count="4" offset="0.5 0 0">
+      <body name="low_box" mocap="true" pos="6 7 0.05">
+        <geom class="obstacle" size="0.11 0.11 0.05" material="low_box"/>
+      </body>
+    </replicate>
+
+    <!-- 目标点：只是一个看得见的标记，碰不到，雷达也照不到 -->
+    <body name="goal" mocap="true" pos="1 0 0.002">
+      <site name="goal" type="cylinder" size="0.08 0.002" rgba="0.18 0.55 0.34 0.9"/>
+    </body>
+
+    <body name="car" pos="0 0 0.0509">
+      <freejoint name="car"/>
+      <inertial pos="0 0 0.012" mass="1.008" diaginertia="0.0016 0.0036 0.0042"/>
+      <geom class="look" type="mesh" mesh="chassis" material="metal"/>
+      <geom class="look" type="mesh" mesh="depth_camera" pos="0.061376 -0.00013463 0.051154" material="silver"/>
+      <geom class="look" type="mesh" mesh="lidar" pos="-0.012242 -0.00008533 0.092501" material="metal"/>
+      <!-- 防撞框：把整辆车包起来的一个盒子，墙和箱子撞的是它 -->
+      <geom name="bumper" type="box" pos="0.003 0 0.01" size="0.106 0.086 0.05" conaffinity="2" friction="0.3" group="3" rgba="0.2 0.5 0.9 0.2"/>
+      <site name="imu" pos="0 0 0" size="0.003"/>
+      <site name="lidar" pos="-0.012242 0 0.0805" size="0.003" rgba="1 0 0 1"/>
+      <site name="depth_camera" pos="0.073 0 0.038" size="0.003" rgba="0 0.4 1 1"/>
+
+      <body name="wheel_lf" pos="0.067052 0.0704 -0.018408">
+        <joint name="wheel_lf" class="wheel"/>
+        <geom class="wheel"/>
+        <replicate count="9" euler="0 40 0">
+          <body name="roller_lf" pos="0 0 -0.0259">
+            <joint class="roller" axis="1 -1 0"/>
+            <geom class="roller" zaxis="1 -1 0"/>
+          </body>
+        </replicate>
+      </body>
+      <body name="wheel_lb" pos="-0.06764 0.0704 -0.018408">
+        <joint name="wheel_lb" class="wheel"/>
+        <geom class="wheel"/>
+        <replicate count="9" euler="0 40 0">
+          <body name="roller_lb" pos="0 0 -0.0259">
+            <joint class="roller" axis="1 1 0"/>
+            <geom class="roller" zaxis="1 1 0"/>
+          </body>
+        </replicate>
+      </body>
+      <body name="wheel_rf" pos="0.067052 -0.0704 -0.018408">
+        <joint name="wheel_rf" class="wheel"/>
+        <geom class="wheel"/>
+        <replicate count="9" euler="0 40 0">
+          <body name="roller_rf" pos="0 0 -0.0259">
+            <joint class="roller" axis="1 1 0"/>
+            <geom class="roller" zaxis="1 1 0"/>
+          </body>
+        </replicate>
+      </body>
+      <body name="wheel_rb" pos="-0.06764 -0.0704 -0.018408">
+        <joint name="wheel_rb" class="wheel"/>
+        <geom class="wheel"/>
+        <replicate count="9" euler="0 40 0">
+          <body name="roller_rb" pos="0 0 -0.0259">
+            <joint class="roller" axis="1 -1 0"/>
+            <geom class="roller" zaxis="1 -1 0"/>
+          </body>
+        </replicate>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- 4 个电机，编号和真车一样：左前、左后、右前、右后。命令是「每秒转多少弧度」 -->
+  <actuator>
+    <velocity name="wheel_lf" joint="wheel_lf" kv="0.05" ctrlrange="-47 47" forcerange="-0.1 0.1"/>
+    <velocity name="wheel_lb" joint="wheel_lb" kv="0.05" ctrlrange="-47 47" forcerange="-0.1 0.1"/>
+    <velocity name="wheel_rf" joint="wheel_rf" kv="0.05" ctrlrange="-47 47" forcerange="-0.1 0.1"/>
+    <velocity name="wheel_rb" joint="wheel_rb" kv="0.05" ctrlrange="-47 47" forcerange="-0.1 0.1"/>
+  </actuator>
+
+  <sensor>
+    <gyro name="imu_gyro" site="imu"/>
+    <jointvel name="encoder_lf" joint="wheel_lf"/>
+    <jointvel name="encoder_lb" joint="wheel_lb"/>
+    <jointvel name="encoder_rf" joint="wheel_rf"/>
+    <jointvel name="encoder_rb" joint="wheel_rb"/>
+  </sensor>
+</mujoco>

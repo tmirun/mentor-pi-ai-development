@@ -20,9 +20,17 @@ ssh rcar.home
 
 模型来源：[Hiwonder/MentorPi-ROS，版本 `fb6d9969`](https://github.com/Hiwonder/MentorPi-ROS/tree/fb6d9969e935eb0e31966185158e33347951e761/simulations/mentorpi_description/meshes/mecanum)。
 
-## MuJoCo 浏览器仿真
+## MuJoCo 仿真
 
-在已安装 MuJoCo 4.0.1 的项目环境中运行：
+在项目根目录运行以下命令，uv 会按项目配置安装 MuJoCo。两种查看方式使用同一个 [`mentorpi.xml`](mentorpi.xml) 模型。
+
+**桌面窗口**（需要图形桌面）：
+
+```bash
+uv run python -m mujoco.viewer --mjcf=mentorpi.xml
+```
+
+**浏览器**（适合通过 SSH 在 pro-ai 上运行）：
 
 ```bash
 uv run main.py

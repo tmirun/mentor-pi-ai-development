@@ -20,6 +20,18 @@ ssh rcar.home
 
 模型来源：[Hiwonder/MentorPi-ROS，版本 `fb6d9969`](https://github.com/Hiwonder/MentorPi-ROS/tree/fb6d9969e935eb0e31966185158e33347951e761/simulations/mentorpi_description/meshes/mecanum)。
 
+## MuJoCo 浏览器仿真
+
+在已安装 MuJoCo 4.0.1 的项目环境中运行：
+
+```bash
+uv run main.py
+```
+
+程序自动加载项目根目录的 `mentorpi.xml`，持续推进仿真并同步到浏览器查看器。
+在 pro-ai 上打开 `http://localhost:8090`；从局域网其他电脑访问时，使用 `http://pro-ai.home:8090`（需能解析该主机名）。
+终端按 `Ctrl+C` 停止仿真并关闭查看器。模型路径以 `main.py` 所在目录为准。
+
 ## 原始资料目录
 
 产品原始资料位于 `original docs/MentorPi智能视觉小车（2025版）/`，包含以下内容：
